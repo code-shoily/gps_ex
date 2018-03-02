@@ -10,6 +10,8 @@ defmodule ExGps.Application do
     children = [
       # Starts a worker by calling: ExGps.Worker.start_link(arg)
       # {ExGps.Worker, arg},
+      {Task.Supervisor, name: ExGps.TaskSupervisor},
+      {Task, fn -> ExGps.TCP.Server.accept(4040) end}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
