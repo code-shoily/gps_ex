@@ -11,25 +11,14 @@ defmodule ExGps.TCP.Server do
 
   defp loop_acceptor(socket) do
     {:ok, client} = :gen_tcp.accept(socket)
-    {:ok, pid} = Task.Supervisor.start_child(ExGps.TaskSupervisor, fn -> serve(client) end)
+
+    {:ok, pid} =
+      Task.Supervisor.start_child(ExGps.TaskSupervisor, fn ->
+        {:ok, worker_pid} = ExGps.TCP.Worker.start_link(socket)
+        ExGps.TCP.Worker.loop(worker_pid)
+      end)
+
     :ok = :gen_tcp.controlling_process(client, pid)
     loop_acceptor(socket)
-  end
-
-  defp serve(socket) do
-    socket
-    |> read_line()
-    |> write_line(socket)
-
-    serve(socket)
-  end
-
-  defp read_line(socket) do
-    {:ok, data} = :gen_tcp.recv(socket, 0)
-    data
-  end
-
-  defp write_line(line, socket) do
-    :gen_tcp.send(socket, line)
   end
 end
